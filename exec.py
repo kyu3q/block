@@ -5,6 +5,7 @@ import math
 import sys
 import pygame.mixer
 import stage
+import numpy as np
 
 # 画面サイズ
 SCREEN = Rect(0, 0, 560, 600)
@@ -138,16 +139,16 @@ class Block(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (40, 30))
         self.rect = self.image.get_rect()
         # ブロックの左上座標
-        self.rect.left = SCREEN.left + x * (self.rect.width)
-        self.rect.top = SCREEN.top + y * (self.rect.height) + 50
-        #
+        self.rect.left = SCREEN.left + x * self.rect.width
+        self.rect.top = SCREEN.top + y * self.rect.height + 30
+        # ブロックに打つ必要の回数の表示フォント
         self.sys_font = pygame.font.SysFont(None, 25)
         self.cnt = stage.stage_cnt_1[y][x]
 
     def draw(self, screen):
         # ブロックに打つ必要の回数を表示
         cnt = self.sys_font.render(str(self.cnt), True, (255, 255, 255))
-        screen.blit(cnt, (self.rect.centerx-2, self.rect.centery-5))
+        screen.blit(cnt, (self.rect.centerx-5, self.rect.centery-7))
 
 
 # スコアのクラス
@@ -168,15 +169,15 @@ class Score:
 def main():
     pygame.init()
     screen = pygame.display.set_mode(SCREEN.size)
-    bg = pygame.image.load("C:/Users/kyu/Desktop/python_work/png/AA.JPG").convert_alpha()    # 背景画像の取得
+    bg = pygame.image.load("C:/Users/kyu/Desktop/git_work/block/picture/background.JPG").convert_alpha()    # 背景画像の取得
     rect_bg = bg.get_rect()
 
     Ball.paddle_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/python_work/wav/flashing.wav")    # パドルにボールが衝突した時の効果音取得
+        "C:/Users/kyu/Desktop/git_work/block/music/flashing.wav")    # パドルにボールが衝突した時の効果音取得
     Ball.block_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/python_work/wav/by_chance.wav")    # ブロックにボールが衝突した時の効果音取得
+        "C:/Users/kyu/Desktop/git_work/block/music/by_chance.wav")    # ブロックにボールが衝突した時の効果音取得
     Ball.game_over_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/python_work/wav/blackout_dulcimer2.wav")    # ゲームオーバー時の効果音取得
+        "C:/Users/kyu/Desktop/git_work/block/music/blackout_dulcimer2.wav")    # ゲームオーバー時の効果音取得
     # 描画用のスプライトグループ
     group = pygame.sprite.RenderUpdates()  
 
@@ -189,19 +190,19 @@ def main():
     Block.containers = group, blocks
 
     # パドルの作成
-    paddle = Paddle("C:/Users/kyu/Desktop/python_work/png/paddle.png")
+    paddle = Paddle("C:/Users/kyu/Desktop/git_work/block/picture/paddle.png")
 
-    # ブロックの作成(14*10)
-    for x in range(1, 15):
-        for y in range(1, 8):
+    # ブロックの作成
+    for x in range(1, np.shape(stage.stage_1)[1] + 1):
+        for y in range(1, np.shape(stage.stage_1)[0] + 1):
             if stage.stage_1[y-1][x-1] > 0:
-                Block("C:/Users/kyu/Desktop/python_work/png/block_" + str(stage.stage_1[y-1][x-1]) + ".png", x-1, y-1)
+                Block("C:/Users/kyu/Desktop/git_work/block/picture/block_" + str(stage.stage_1[y-1][x-1]) + ".png", x-1, y-1)
 
     # スコアを画面(10, 10)に表示
     score = Score(10, 10)    
 
     # ボールを作成
-    Ball("C:/Users/kyu/Desktop/python_work/png/ball.png",
+    Ball("C:/Users/kyu/Desktop/git_work/block/picture/ball.png",
          paddle, blocks, score, 5, 135, 45)
 
     clock = pygame.time.Clock()
