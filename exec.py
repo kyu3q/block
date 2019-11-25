@@ -6,10 +6,12 @@ import sys
 import pygame.mixer
 import stage
 import numpy as np
+import random
 
 # 画面サイズ
 SCREEN = Rect(0, 0, 560, 600)
-
+# ファイルパス
+FILE_PATH = "C:/Users/kyu/Desktop/git_work/block/"
 
 # バドルのクラス
 class Paddle(pygame.sprite.Sprite):
@@ -24,31 +26,36 @@ class Paddle(pygame.sprite.Sprite):
         self.heart = heart
         self.blocks = blocks  # ブロックグループへの参照
         self.balls_count = 1
+        self.add_ball_cnt = 0
 
     def update(self):
         # キーイベント処理(キャラクタ画像の移動)
         pressed_key = pygame.key.get_pressed()
         if pressed_key[K_LEFT]:
-            self.rect.centerx -= 10
-        # 「→」キーが押されたらx座標を+10移動
+            self.rect.centerx -= 7
+        # 「←」「→」キーが押されたらx座標を移動
         if pressed_key[K_RIGHT]:
-            self.rect.centerx += 10
+            self.rect.centerx += 7
         self.rect.clamp_ip(SCREEN)  # ゲーム画面内のみで移動
 
-    def add_ball(self, add_ball_cnt):
-        for index in range(add_ball_cnt):
-            Ball("C:/Users/kyu/Desktop/git_work/block/picture/ball.png",
-                 self, 7, 135, 45, index + 1)
-            self.balls_count += 1
+    def add_ball(self, function):
+        self.add_ball_cnt += function
 
     def kill_ball(self):
         self.balls_count -= 1
+
+    def create_ball(self):
+        if self.add_ball_cnt > 0:
+            Ball(FILE_PATH + "picture/ball.png",
+                 self, 7, 135, 45, 1)
+            self.add_ball_cnt -= 1
+            self.balls_count += 1
 
 
 # ボールのクラス
 class Ball(pygame.sprite.Sprite):
     # コンストラクタ（初期化メソッド）
-    def __init__(self, filename, paddle, speed, angle_left, angle_right, add_cnt):
+    def __init__(self, filename, paddle, speed, angle_left, angle_right, add_flg):
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = pygame.image.load(filename).convert()
         self.image = pygame.transform.scale(self.image, (15, 15))
@@ -59,12 +66,12 @@ class Ball(pygame.sprite.Sprite):
         self.speed = speed  # ボールの初期速度
         self.angle_left = angle_left  # パドルの反射方向(左端:135度）
         self.angle_right = angle_right  # パドルの反射方向(右端:45度）
-        if add_cnt >= 1:
+        if add_flg == 1:
             # ボールの初期位置
             self.dx = self.speed * math.cos(0.5)
             self.dy = -self.speed * math.sin(0.5)
-            self.rect.centerx = self.paddle.rect.centerx + add_cnt * self.dx * 2
-            self.rect.bottom = self.paddle.rect.top + add_cnt * self.dy * 2
+            self.rect.centerx = self.paddle.rect.centerx
+            self.rect.bottom = self.paddle.rect.top
             self.update = self.move
         else:
             self.update = self.start  # ゲーム開始状態に更新
@@ -117,7 +124,7 @@ class Ball(pygame.sprite.Sprite):
             angle = math.radians(y)                     # 反射角度
             self.dx = self.speed * math.cos(angle)
             self.dy = -self.speed * math.sin(angle)
-            self.paddle_sound.play()                    # 反射音
+            # self.paddle_sound.play()                    # 反射音
 
         # ボールを落とした場合
         if self.rect.top > SCREEN.bottom:
@@ -189,23 +196,31 @@ class Block(pygame.sprite.Sprite):
         # ブロックの左上座標
         self.rect.left = SCREEN.left + x * self.rect.width
         self.rect.top = SCREEN.top + y * self.rect.height + 30
-        # ブロックに打つ必要の回数の表示フォント
-        self.sys_font = pygame.font.SysFont(None, 25)
+        # ブロックに打つ必要の回数
         self.cnt = cnt
         self.function = function  # 崩した時の変化
+        self.sys_font = pygame.font.SysFont(None, 25)
 
     def draw(self, screen):
         # ブロックに打つ必要の回数を表示
+
         text = ""
-        if self.cnt > 1:
-            text += str(self.cnt)
+        display_x = self.rect.centerx-5
+        display_y = self.rect.centery-7
 
         if self.function > 0:
-            text += "a"
+            text = "?"
+
+        elif self.cnt > 1:
+            text = str(self.cnt)
+            if 10 <= self.cnt < 100:
+                display_x = self.rect.centerx-10
+            elif self.cnt >= 100:
+                display_x = self.rect.centerx - 15
 
         if text != "":
             cnt_image = self.sys_font.render(text, True, (255, 255, 255))
-            screen.blit(cnt_image, (self.rect.centerx-5, self.rect.centery-7))
+            screen.blit(cnt_image, (display_x, display_y))
 
 
 # スコアのクラス
@@ -246,23 +261,18 @@ class Heart:
         self.heart_cnt -= 1
 
 
-def main(stage_cnt):
+def sub_main(stage_cnt):
     pygame.init()
     screen = pygame.display.set_mode(SCREEN.size)
-    bg = pygame.image.load("C:/Users/kyu/Desktop/git_work/block/picture/background.JPG").convert_alpha()    # 背景画像の取得
+    bg = pygame.image.load(FILE_PATH + "picture/background.JPG").convert_alpha()    # 背景画像の取得
     rect_bg = bg.get_rect()
 
-    Ball.paddle_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/git_work/block/music/flashing.wav")    # パドルにボールが衝突した時の効果音取得
-    Ball.block_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/git_work/block/music/by_chance.wav")    # ブロックにボールが衝突した時の効果音取得
-    Ball.block_sound_2 = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/git_work/block/music/po.wav")    # ブロックにボールが衝突した時の効果音取得
+    # Ball.paddle_sound = pygame.mixer.Sound(FILE_PATH + "music/flashing.wav")    # パドルにボールが衝突した時の効果音取得
+    Ball.block_sound = pygame.mixer.Sound(FILE_PATH + "music/striking_a_small_stone.wav")    # ブロックにボールが衝突した時の効果音取得
+    Ball.block_sound_2 = pygame.mixer.Sound(FILE_PATH + "music/po.wav")    # ブロックにボールが衝突した時の効果音取得
 
-    Ball.game_over_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/git_work/block/music/blackout.wav")    # ゲームオーバー時の効果音取得
-    Ball.game_clear_sound = pygame.mixer.Sound(
-        "C:/Users/kyu/Desktop/git_work/block/music/blackout_dulcimer2.wav")    # ゲームオーバー時の効果音取得
+    Ball.game_over_sound = pygame.mixer.Sound(FILE_PATH + "music/blackout.wav")    # ゲームオーバー時の効果音取得
+    Ball.game_clear_sound = pygame.mixer.Sound(FILE_PATH + "music/blackout_dulcimer2.wav")    # ゲームオーバー時の効果音取得
 
     # 描画用のスプライトグループ
     group = pygame.sprite.RenderUpdates()
@@ -282,20 +292,21 @@ def main(stage_cnt):
     heart = Heart()
 
     # ブロックの作成
-    for x in range(np.shape(stage.block)[2]):
-        for y in range(np.shape(stage.block)[1]):
-            if stage.block[stage_cnt][y][x] > 0:
-                Block("C:/Users/kyu/Desktop/git_work/block/picture/block_" + str(stage.block[stage_cnt][y][x]) + ".png",
-                      x, y, stage.block[stage_cnt][y][x], stage.function[stage_cnt][y][x])
+    for x in range(np.shape(stage.stage)[2]):
+        for y in range(np.shape(stage.stage)[1]):
+            if stage.stage[stage_cnt][y][x] > 0:
+                Block(FILE_PATH + "picture/block_" + str(stage.stage[stage_cnt][y][x]) + ".png",
+                      x, y, stage.stage[stage_cnt][y][x],
+                      3*random.randrange(3+int(stage_cnt/10))*random.randrange(2))
 
     # パドルの作成
-    paddle = Paddle("C:/Users/kyu/Desktop/git_work/block/picture/paddle.png", blocks, score, heart)
+    paddle = Paddle(FILE_PATH + "picture/paddle.png", blocks, score, heart)
 
     # ボールを作成
-    Ball("C:/Users/kyu/Desktop/git_work/block/picture/ball.png",
-         paddle, 7, 135, 45, 0)
+    Ball(FILE_PATH + "picture/ball.png", paddle, 7, 135, 45, 0)
 
     clock = pygame.time.Clock()
+    ball_create_flg = True
 
     while 1:
 
@@ -305,6 +316,13 @@ def main(stage_cnt):
         # 全てのスプライトグループを更新
         group.update()
         # 全てのスプライトグループを描画
+
+        # ボールの追加
+        if ball_create_flg:
+            paddle.create_ball()
+            ball_create_flg = False
+        else:
+            ball_create_flg = True
         group.draw(screen)
         # ブロックに打つ必要の回数を表示
         for block in blocks:
@@ -313,7 +331,6 @@ def main(stage_cnt):
         score.draw(screen)
         # ハートを描画"
         heart.draw(screen)
-
         for ball in balls:
             if ball.update == ball.start and heart.heart_cnt == 3:
                 # ステージ表示
@@ -323,7 +340,7 @@ def main(stage_cnt):
         # GameOver
         if len(blocks) == 0:
 
-            if stage_cnt == np.shape(stage.block)[0] - 1:
+            if stage_cnt == np.shape(stage.stage)[0] - 1:
                 screen.blit(pygame.font.SysFont(None, 100).render("CLEAR~ (*^_^*)", True, (255, 255, 250)), (30, 250))
                 for ball in balls:
                     ball.kill()
@@ -333,10 +350,10 @@ def main(stage_cnt):
                 break
 
         if paddle.balls_count > 0:
-            screen.blit(pygame.font.SysFont(None, 20).render("debug-balls:" + str(paddle.balls_count),
-                                                             True, (255, 255, 250)), (300, 10))
+            screen.blit(pygame.font.SysFont(None, 30).render("Ball:" + str(paddle.balls_count),
+                                                             True, (255, 255, 250)), (450, 550))
 
-        # 画面更新
+        # 画面更新./;:
         pygame.display.update()
 
         # キーイベント（終了）
@@ -347,9 +364,16 @@ def main(stage_cnt):
             if event.type == KEYDOWN and event.key == K_ESCAPE:
                 pygame.quit()
                 sys.exit()
+            if event.type == KEYDOWN and event.key == K_SPACE:
+                main()
+
+
+def main():
+    for i in range(np.shape(stage.stage)[0]):
+        sub_main(i)
 
 
 if __name__ == "__main__":
+    main()
 
-    for i in range(np.shape(stage.block)[0]):
-        main(i)
+
