@@ -7,11 +7,12 @@ import pygame.mixer
 import stage
 import numpy as np
 import random
+import os
 
 # 画面サイズ
 SCREEN = Rect(0, 0, 560, 600)
 # ファイルパス
-FILE_PATH = "C:/Users/kyu/Desktop/git_work/block/"
+FILE_PATH = os.path.dirname(os.path.abspath(__file__)) + "/"
 
 # バドルのクラス
 class Paddle(pygame.sprite.Sprite):
@@ -264,7 +265,7 @@ class Heart:
 def sub_main(stage_cnt):
     pygame.init()
     screen = pygame.display.set_mode(SCREEN.size)
-    bg = pygame.image.load(FILE_PATH + "picture/background.JPG").convert_alpha()    # 背景画像の取得
+    bg = pygame.image.load(FILE_PATH + "picture/background.jpg").convert_alpha()    # 背景画像の取得
     rect_bg = bg.get_rect()
 
     # Ball.paddle_sound = pygame.mixer.Sound(FILE_PATH + "music/flashing.wav")    # パドルにボールが衝突した時の効果音取得
