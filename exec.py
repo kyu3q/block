@@ -244,16 +244,24 @@ class Heart:
     def __init__(self):
         self.sys_font = pygame.font.SysFont(None, 30)
         self.sys_font_2 = pygame.font.SysFont(None, 100)
-        self.heart_cnt = 3
+        self.heart_cnt = 4
+        # ハート画像をロード
+        self.heart_imgs = [
+            pygame.image.load(FILE_PATH + "picture/heart1.png").convert_alpha(),
+            pygame.image.load(FILE_PATH + "picture/heart2.png").convert_alpha(),
+            pygame.image.load(FILE_PATH + "picture/heart3.png").convert_alpha(),
+            pygame.image.load(FILE_PATH + "picture/heart4.png").convert_alpha()
+        ]
 
     def draw(self, screen):
-        heart_text = ""
-        for index in range(self.heart_cnt):
-            heart_text += "@ "
-
         if self.heart_cnt > 0:
-            img = self.sys_font.render(heart_text, True, (255, 255, 250))
-            screen.blit(img, (450, 10))
+            # heart_cnt=4→heart1, 3→heart2, 2→heart3, 1/1→heart4
+            idx = 4 - self.heart_cnt
+            if idx >= len(self.heart_imgs):
+                idx = len(self.heart_imgs) - 1
+            img = self.heart_imgs[idx]
+            img = pygame.transform.scale(img, (40, 40))
+            screen.blit(img, (510, 10))
         else:
             img = self.sys_font_2.render("GAME OVER!", True, (255, 255, 250))
             screen.blit(img, (40, 250))
