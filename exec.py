@@ -10,7 +10,7 @@ import random
 import os
 
 # 画面サイズ
-SCREEN = Rect(0, 0, 560, 600)
+SCREEN = Rect(0, 0, 560, 660)
 # ファイルパス
 FILE_PATH = os.path.dirname(os.path.abspath(__file__)) + "/"
 
@@ -196,7 +196,9 @@ class Block(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         # ブロックの左上座標
         self.rect.left = SCREEN.left + x * self.rect.width
-        self.rect.top = SCREEN.top + y * self.rect.height + 30
+        if self.rect.left >= 480:
+            self.rect.left += 40  # ライフエリア分右にずらす
+        self.rect.top = SCREEN.top + y * self.rect.height + 60  # 30→60に変更してさらに下に
         # ブロックに打つ必要の回数
         self.cnt = cnt
         self.function = function  # 崩した時の変化
@@ -232,8 +234,17 @@ class Score:
         (self.x, self.y) = (x, y)
 
     def draw(self, screen):
-        img = self.sys_font.render("paddle.score:"+str(self.score), True, (255, 255, 250))
-        screen.blit(img, (self.x, self.y))
+        # 枠線のみ（背景なし、縦25px、横80px）
+        pygame.draw.rect(screen, (255, 215, 0), (10, 10, 80, 25), 2, border_radius=8)
+        # スコア数値（右寄せ）
+        score_font = pygame.font.SysFont(None, 28, bold=True)
+        score_text = str(self.score)
+        score_img = score_font.render(score_text, True, (255, 255, 255))
+        score_rect = score_img.get_rect()
+        score_rect.top = 12
+        score_rect.right = 80  # 枠の右端に合わせる
+        score_rect.left = max(20, score_rect.right - score_rect.width)  # 左端が枠内に収まるように
+        screen.blit(score_img, score_rect)
 
     def add_score(self, x):
         self.score += x
@@ -244,24 +255,32 @@ class Heart:
     def __init__(self):
         self.sys_font = pygame.font.SysFont(None, 30)
         self.sys_font_2 = pygame.font.SysFont(None, 100)
-        self.heart_cnt = 4
-        # ハート画像をロード
-        self.heart_imgs = [
-            pygame.image.load(FILE_PATH + "picture/heart1.png").convert_alpha(),
-            pygame.image.load(FILE_PATH + "picture/heart2.png").convert_alpha(),
-            pygame.image.load(FILE_PATH + "picture/heart3.png").convert_alpha(),
-            pygame.image.load(FILE_PATH + "picture/heart4.png").convert_alpha()
-        ]
+        self.heart_cnt = 6
+        self.max_life = 6
+        self.life_img = pygame.image.load(FILE_PATH + "picture/life.png").convert_alpha()
+        self.life_lost_img = pygame.image.load(FILE_PATH + "picture/life_lost.png").convert_alpha()
+        self.life_img = pygame.transform.scale(self.life_img, (20, 40))
+        self.life_lost_img = pygame.transform.scale(self.life_lost_img, (20, 40))
+        self.life_cols = self.max_life  # 横並び
+        self.life_rows = 1
 
     def draw(self, screen):
         if self.heart_cnt > 0:
-            # heart_cnt=4→heart1, 3→heart2, 2→heart3, 1/1→heart4
-            idx = 4 - self.heart_cnt
-            if idx >= len(self.heart_imgs):
-                idx = len(self.heart_imgs) - 1
-            img = self.heart_imgs[idx]
-            img = pygame.transform.scale(img, (40, 40))
-            screen.blit(img, (510, 10))
+            # 通常の間隔は2px、右端だけ1pxにする
+            normal_gap = 2
+            right_gap = 1
+            total_width = self.max_life * 20 + (self.max_life - 2) * normal_gap + right_gap
+            start_x = 550 - total_width  # 画面右端から詰めて配置
+            for i in range(self.max_life):
+                if i == self.max_life - 1:
+                    x = 550 - 20 - right_gap  # 最後の画像だけ右端1px余白
+                else:
+                    x = start_x + i * (20 + normal_gap)
+                y = 10
+                if i < self.heart_cnt:
+                    screen.blit(self.life_img, (x, y))
+                else:
+                    screen.blit(self.life_lost_img, (x, y))
         else:
             img = self.sys_font_2.render("GAME OVER!", True, (255, 255, 250))
             screen.blit(img, (40, 250))
@@ -360,7 +379,7 @@ def sub_main(stage_cnt):
 
         if paddle.balls_count > 0:
             screen.blit(pygame.font.SysFont(None, 30).render("Ball:" + str(paddle.balls_count),
-                                                             True, (255, 255, 250)), (450, 550))
+                                                             True, (255, 255, 250)), (450, 610))
 
         # 画面更新./;:
         pygame.display.update()
